@@ -7,10 +7,12 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 import com.opencsv.bean.ColumnPositionMappingStrategy;
 import com.opencsv.bean.CsvToBean;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.w3c.dom.*;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +27,16 @@ public class Main {
 
         String jsonFileName = "data.json";
         listToJson(listEmployee, jsonFileName);
+
+
+        List<Employee> listEmployee2 = new ArrayList<>();
+        listEmployee2 = parseXML("data.xml");
+
+        for (Employee employee : listEmployee2) {
+            System.out.println(employee);
+        }
+        String jsonFileName2 = "data2.json";
+        listToJson(listEmployee2, jsonFileName2);
 
     }
 
@@ -65,5 +77,75 @@ public class Main {
         }
 
     }
+
+    public static List<Employee> parseXML(String fileName) {
+
+        List<Employee> employeeList = new ArrayList<>();
+        Document dom = getNewDocument(fileName);
+
+        if (dom != null) {
+            readNode(dom.getDocumentElement(),employeeList);
+        }
+
+        return employeeList;
+
+    }
+
+    private static void readNode(Node node, List<Employee> employeeList) {
+
+        NodeList nodeList = node.getChildNodes();
+
+        for (int i = 0; i < nodeList.getLength(); i++) {
+
+            Node node_ = nodeList.item(i);
+
+            if (Node.ELEMENT_NODE == node_.getNodeType()) {
+
+                if (node_.getNodeName() == "employee") {
+                    employeeList.add(getEmployeeByNodeList(node_));
+                }
+
+            }
+
+            readNode(node_, employeeList);
+        }
+
+    }
+
+    private static Employee getEmployeeByNodeList(Node node) {
+
+        NodeList nodeList = node.getChildNodes();
+
+        String idAsString = nodeList.item(1).getTextContent();
+        String firstName = nodeList.item(3).getTextContent();
+        String secondName = nodeList.item(5).getTextContent();
+        String country = nodeList.item(7).getTextContent();
+        String age = nodeList.item(9).getTextContent();
+
+        return new Employee(Long.parseLong(idAsString), firstName, secondName, country, Integer.parseInt(age));
+
+    }
+
+    private static Document getNewDocument(String fileName) {
+
+
+        try {
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder documentBuilder = factory.newDocumentBuilder();
+            Document document = documentBuilder.parse(new File(fileName));
+
+            return document;
+
+        } catch (ParserConfigurationException ex) {
+            System.out.println(ex.fillInStackTrace());
+        } catch (Exception ex) {
+            System.out.println(ex.fillInStackTrace());
+        }
+
+        return null;
+
+    }
+
 
 }
